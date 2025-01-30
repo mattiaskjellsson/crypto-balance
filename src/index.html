@@ -4,41 +4,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crypto Wallet Balance Checker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js"></script>
 </head>
 <body>
-  <h1>Crypto Wallet Balance Checker</h1>
-  <input type="text" id="walletAddress" placeholder="Enter Bitcoin Wallet Address">
-  <button onclick="fetchWalletBalance()">Check Balance</button>
+  <div class="container">
+    <h1>Crypto Wallet Balance Checker</h1>
+    <input type="text" id="walletAddress" placeholder="Enter Bitcoin Wallet Address">
+    <button id="checkBalance">Check Balance</button>
 
-  <div id="results">
-    <p>Wallet Balance: <span id="balance"></span> BTC</p>
-    <p>Current Price: <span id="price"></span> USD</p>
-    <p>Total Value: <span id="totalValue"></span> USD</p>
+    <div id="loading" style="display: none;">
+      <p>Loading...</p>
+    </div>
+
+    <div id="results">
+      <p>Wallet Balance: <span id="balance">--</span> BTC</p>
+      <p>Current Price: <span id="price">--</span> USD</p>
+      <p>Total Value: <span id="totalValue">--</span> USD</p>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', (event) => {
+        const walletAddressInput = document.getElementById('walletAddress');
+        const checkBalanceButton = document.getElementById('checkBalance');
+        const resultsDiv = document.getElementById('results');
+        const balanceSpan = document.getElementById('balance');
+        const priceSpan = document.getElementById('price');
+        const valueSpan = document.getElementById('totalValue');
+  
+        const loadingDiv = document.getElementById('loading');
+  
+        checkBalanceButton.addEventListener('click', async () => {
+          const walletAddress = walletAddressInput.value.trim();
+        
+          if (walletAddress === '') {
+            alert('Please enter a valid wallet address!');
+            return;
+          }
+          
+          resultsDiv.style.display = 'none';
+          loadingDiv.style.display = 'flex';
+          checkBalanceButton.disabled = true;
+          balanceSpan.textContent = '--';
+          priceSpan.textContent = '--';
+          valueSpan.textContent = '--';
+  
+          const result = await fetchWalletBalance(walletAddress);
+  
+          if (result) {
+            balanceSpan.textContent = result.balance.toFixed(6);
+            priceSpan.textContent = `$${result.price.toFixed(2)}`;
+            valueSpan.textContent = `$${result.value.toFixed(2)}`;
+          } else {
+            alert('Failed to fetch wallet data. Please try again.');
+          }
+  
+          resultsDiv.style.display = 'flex';
+          resultsDiv.style.flexDirection = 'column';
+          loadingDiv.style.display = 'none';
+          checkBalanceButton.disabled = false;
+        });
+      });
+    </script>
   </div>
-
-  <script>
-    async function fetchWalletBalance() {
-      const walletAddress = document.getElementById('walletAddress').value;
-
-      // Fetch wallet balance
-      const balanceResponse = await fetch(`https://blockchain.info/balance?active=${walletAddress}`);
-      const balanceData = await balanceResponse.json();
-      const balanceInSatoshis = balanceData[walletAddress].final_balance;
-      const balanceInBTC = balanceInSatoshis / 100000000;
-
-      // Fetch current Bitcoin price
-      const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-      const priceData = await priceResponse.json();
-      const currentPrice = priceData.bitcoin.usd;
-
-      // Calculate total value
-      const totalValue = balanceInBTC * currentPrice;
-
-      // Display results
-      document.getElementById('balance').textContent = balanceInBTC;
-      document.getElementById('price').textContent = currentPrice;
-      document.getElementById('totalValue').textContent = totalValue.toFixed(2);
-    }
-  </script>
 </body>
 </html>
